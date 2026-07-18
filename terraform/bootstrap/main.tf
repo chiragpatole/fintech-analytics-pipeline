@@ -35,6 +35,7 @@ resource "google_project_service" "required" {
     "billingbudgets.googleapis.com",
     "monitoring.googleapis.com",
     "sts.googleapis.com", # needed for Workload Identity Federation
+    "cloudresourcemanager.googleapis.com", # needed for project-level IAM member resources
   ])
 
   project            = var.project_id
