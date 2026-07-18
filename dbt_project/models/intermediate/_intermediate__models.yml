@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: int_customer_activity
+    description: One row per customer, aggregating transaction behavior for RFM segmentation downstream.
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_fraud_signals
+    description: Transaction-level rows enriched with an amount-anomaly flag based on each customer's average spend.
+    columns:
+      - name: transaction_id
+        data_tests:
+          - unique
+          - not_null

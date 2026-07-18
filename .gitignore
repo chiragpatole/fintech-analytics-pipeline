@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Data generator output
+data_generator/output/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# Terraform
+terraform/**/.terraform/
+terraform/**/.terraform.lock.hcl
+terraform/**/terraform.tfvars
+terraform/**/*.tfstate
+terraform/**/*.tfstate.backup
+terraform/**/crash.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Secrets — never commit real credentials
+*.json
+!package*.json
+.env

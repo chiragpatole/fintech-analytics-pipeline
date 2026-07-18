@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    database: fintech-analytics-pipeline
+    schema: raw
+    tables:
+      - name: transactions
+        description: Synthetic bank transactions loaded from GCS by the data generator (Phase 2)
+        loaded_at_field: timestamp
+        freshness:
+          warn_after: {count: 2, period: day}
+          error_after: {count: 5, period: day}

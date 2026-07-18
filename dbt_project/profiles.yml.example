@@ -1,0 +1,27 @@
+# This file goes in ~/.dbt/profiles.yml on your machine — NOT inside the
+# repo (it's git-ignored). Copy the block below there.
+#
+# method: oauth uses your local `gcloud auth application-default login`
+# credentials from Phase 1 — no service account key needed for local dev.
+# CI (Phase 4) will use a different auth method (Workload Identity Federation).
+
+fintech_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: fintech-analytics-pipeline
+      dataset: analytics_dev
+      location: EU
+      threads: 4
+      timeout_seconds: 300
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: fintech-analytics-pipeline
+      dataset: analytics_prod
+      location: EU
+      threads: 4
+      timeout_seconds: 300

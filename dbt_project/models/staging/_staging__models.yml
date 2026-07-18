@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: Cleaned and typed transaction records, one row per transaction.
+    columns:
+      - name: transaction_id
+        description: Unique identifier for the transaction
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: transaction_timestamp
+        data_tests:
+          - not_null
+      - name: amount
+        data_tests:
+          - not_null
+      - name: currency
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['EUR', 'USD', 'GBP']
+      - name: transaction_type
+        data_tests:
+          - accepted_values:
+              values: ['purchase', 'refund', 'transfer', 'withdrawal', 'deposit']
+      - name: is_fraud
+        data_tests:
+          - not_null

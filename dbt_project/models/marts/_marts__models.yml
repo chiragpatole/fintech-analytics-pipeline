@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: fct_daily_transaction_volume
+    description: Daily transaction count, value, and fraud rate, by currency.
+    columns:
+      - name: transaction_date
+        data_tests:
+          - not_null
+
+  - name: dim_customer_rfm
+    description: Customer-level RFM (Recency, Frequency, Monetary) scores and behavioral segment.
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_segment
+        data_tests:
+          - accepted_values:
+              values: ['champion', 'loyal', 'at_risk_high_value', 'churned', 'developing']
+
+  - name: fraud_summary_by_category
+    description: Fraud rate and flagged-amount totals broken down by merchant category.
+    columns:
+      - name: merchant_category
+        data_tests:
+          - unique
+          - not_null
