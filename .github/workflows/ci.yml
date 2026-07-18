@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: fintech-analytics-pipeline
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff==3.1.0
+
+      - name: Lint dbt SQL
+        working-directory: dbt_project
+        run: sqlfluff lint models --dialect bigquery
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # required for Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Terraform Plan (core)
+        working-directory: terraform/core
+        run: |
+          terraform init
+          terraform plan \
+            -var="project_id=${{ env.GCP_PROJECT_ID }}" \
+            -var="github_repo=chiragpatole/fintech-analytics-pipeline"
+
+  dbt-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dbt
+        run: pip install -r dbt_project/requirements.txt
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Write dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<EOF
+          fintech_analytics:
+            target: dev
+            outputs:
+              dev:
+                type: bigquery
+                method: oauth
+                project: ${{ env.GCP_PROJECT_ID }}
+                dataset: analytics_dev
+                location: EU
+                threads: 4
+          EOF
+
+      - name: Fetch prod manifest for Slim CI (if it exists)
+        run: |
+          mkdir -p prod-state
+          gcloud storage cp \
+            gs://fintech-analytics-pipeline-raw-landing/dbt-state/manifest.json \
+            prod-state/manifest.json || echo "No prior prod manifest yet — will run a full build."
+
+      - name: dbt build (Slim CI when state available, full build on first run)
+        working-directory: dbt_project
+        run: |
+          dbt deps || true
+          if [ -f ../prod-state/manifest.json ]; then
+            echo "Running Slim CI — only modified models + their downstream dependents"
+            dbt build --select "state:modified+" --state ../prod-state
+          else
+            echo "No state file — running full build"
+            dbt build
+          fi
