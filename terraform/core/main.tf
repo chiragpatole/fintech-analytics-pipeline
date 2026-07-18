@@ -165,3 +165,22 @@ resource "google_project_iam_member" "ci_wif_admin" {
   role    = "roles/iam.workloadIdentityPoolAdmin"
   member  = "serviceAccount:${google_service_account.ci.email}"
 }
+
+# The roles above let the CI SA manage specific resource *types* (buckets,
+# service accounts, WIF pools) but none of them grant permission to read or
+# write the project's IAM policy itself -- which is exactly what
+# google_project_iam_member requires. GCP blocks a principal from granting
+# itself IAM permissions it doesn't already have, so Terraform needs this
+# broader role to manage project-level bindings at all.
+#
+# NOTE (deliberate tradeoff): roles/resourcemanager.projectIamAdmin lets
+# this CI SA modify ANY IAM binding on the project, not just the ones this
+# config declares. In a team/production setting, project IAM changes would
+# typically be kept out of a CI pipeline's hands and applied by a separate,
+# human-reviewed process. Accepted here as a reasonable simplification for
+# a solo portfolio project.
+resource "google_project_iam_member" "ci_project_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.ci.email}"
+}
