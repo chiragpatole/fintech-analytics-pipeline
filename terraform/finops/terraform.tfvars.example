@@ -3,10 +3,9 @@
 # personal emails if the repo is public. Use placeholders in README/screenshots instead.
 
 project_id                  = "fintech-analytics-pipeline"
-project_number               = "123456789012"
+project_number               = "401302271153"
 region                        = "europe-west3"
 bq_location                   = "EU"
 billing_account_id            = "XXXXXX-XXXXXX-XXXXXX"
-billing_service_agent_email   = "billing-export-bigquery@123456789012.iam.gserviceaccount.com"
 alert_email                   = "you@example.com"
 budget_amount                 = 5

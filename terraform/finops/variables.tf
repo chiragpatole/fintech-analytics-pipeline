@@ -11,7 +11,7 @@ variable "project_number" {
 variable "region" {
   description = "Default GCP region for provider"
   type        = string
-  default     = "europe-west3" # Frankfurt — keep data in the EU
+  default     = "europe-west3" # Frankfurt -- keep data in the EU
 }
 
 variable "bq_location" {
@@ -22,11 +22,6 @@ variable "bq_location" {
 
 variable "billing_account_id" {
   description = "Billing account ID (format XXXXXX-XXXXXX-XXXXXX)"
-  type        = string
-}
-
-variable "billing_service_agent_email" {
-  description = "Cloud Billing service agent email — see modules/billing-export/variables.tf for how to find it"
   type        = string
 }
 

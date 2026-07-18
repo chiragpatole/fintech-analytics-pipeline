@@ -1,3 +1,8 @@
+variable "project_id" {
+  description = "GCP project ID that hosts the email notification channel"
+  type        = string
+}
+
 variable "billing_account_id" {
   description = "Your GCP billing account ID (format XXXXXX-XXXXXX-XXXXXX)"
   type        = string
