@@ -103,6 +103,12 @@ resource "google_storage_bucket_iam_member" "ci_landing_admin" {
   member = "serviceAccount:${google_service_account.ci.email}"
 }
 
+resource "google_storage_bucket_iam_member" "ci_state_access" {
+  bucket = "${var.project_id}-tf-state"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.ci.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github" {
   project                   = var.project_id
   workload_identity_pool_id = "github-actions-pool"
