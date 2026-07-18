@@ -139,3 +139,29 @@ resource "google_service_account_iam_member" "wif_binding" {
   role                = "roles/iam.workloadIdentityUser"
   member              = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
 }
+
+# --- Terraform-management permissions for the CI service account -------
+# The grants above cover what the CI SA needs at *runtime* (edit specific
+# datasets, upload to the landing bucket). But Terraform itself also needs
+# to read/manage the full state of everything this module declares on
+# every plan/apply -- including the bucket resource, its own service
+# account resource, and the Workload Identity Pool -- which needs broader,
+# resource-level admin roles, not just those narrow app-level grants.
+
+resource "google_project_iam_member" "ci_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.ci.email}"
+}
+
+resource "google_project_iam_member" "ci_service_account_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.ci.email}"
+}
+
+resource "google_project_iam_member" "ci_wif_admin" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = "serviceAccount:${google_service_account.ci.email}"
+}
