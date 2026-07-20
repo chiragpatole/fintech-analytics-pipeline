@@ -38,3 +38,13 @@ module "budget_alert" {
   alert_email         = var.alert_email
   budget_amount       = var.budget_amount
 }
+
+# The CI service account (created in terraform/core) needs read access to
+# this dataset for dbt to build the finops models against it -- it only
+# got access to raw/analytics_dev/analytics_prod in Phase 1.
+resource "google_bigquery_dataset_iam_member" "ci_billing_export_viewer" {
+  project    = var.project_id
+  dataset_id = module.billing_export.dataset_id
+  role       = "roles/bigquery.dataViewer"
+  member     = "serviceAccount:github-actions-ci@${var.project_id}.iam.gserviceaccount.com"
+}
