@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: billing
+    database: fintech-analytics-pipeline
+    schema: billing_export
+    tables:
+      - name: gcp_billing_export
+        description: >
+          GCP detailed usage cost export, written directly by Google's billing
+          export service (not the data generator). Table name follows the
+          pattern gcp_billing_export_v1_<BILLING_ACCOUNT_ID_with_underscores>
+          — see the identifier override below.
+        identifier: "gcp_billing_export_resource_v1_013F91_8BABCD_3D56AC"
+        loaded_at_field: export_time
+        freshness:
+          warn_after: {count: 2, period: day}
+          error_after: {count: 5, period: day}

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_billing_export
+    description: Flattened GCP billing export rows, with net cost (after credits) computed per line item.
+    columns:
+      - name: billing_account_id
+        data_tests:
+          - not_null
+
+  - name: cost_by_project_service
+    description: Daily and monthly cost broken down by project and GCP service.
+    columns:
+      - name: usage_date
+        data_tests:
+          - not_null
+
+  - name: cost_by_label
+    description: Cost broken down by resource label key/value, with an "untagged" bucket for unlabeled resources.
+
+  - name: budget_vs_actual
+    description: Cumulative spend per invoice month against the Terraform-defined budget, with a naive linear month-end projection.
+    columns:
+      - name: usage_date
+        data_tests:
+          - unique
+          - not_null
