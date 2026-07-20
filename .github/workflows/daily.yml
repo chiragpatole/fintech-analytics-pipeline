@@ -1,0 +1,88 @@
+name: Daily Data Refresh
+
+on:
+  schedule:
+    # 06:00 UTC daily -- simulates a new day's transactions arriving,
+    # then rebuilds the pipeline on top of it.
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}  # allows manual triggering from the Actions tab too
+
+env:
+  GCP_PROJECT_ID: fintech-analytics-pipeline
+
+jobs:
+  generate-and-load:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install data generator dependencies
+        run: pip install -r data_generator/requirements.txt
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Generate today's transactions
+        working-directory: data_generator
+        run: python generate_transactions.py --mode daily --rows 1500
+
+      - name: Load into BigQuery raw dataset
+        working-directory: data_generator
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          python load_to_bigquery.py \
+            --source "gs://${{ env.GCP_PROJECT_ID }}-raw-landing/transactions/daily/${TODAY}/*.parquet"
+
+  rebuild-dbt:
+    needs: generate-and-load
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dbt
+        run: pip install -r dbt_project/requirements.txt
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Write dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<EOF
+          fintech_analytics:
+            target: prod
+            outputs:
+              prod:
+                type: bigquery
+                method: oauth
+                project: ${{ env.GCP_PROJECT_ID }}
+                dataset: analytics_prod
+                location: EU
+                threads: 4
+          EOF
+
+      - name: Rebuild transaction models on top of today's new data
+        working-directory: dbt_project
+        run: |
+          dbt deps || true
+          dbt build --select stg_transactions+ --target prod
